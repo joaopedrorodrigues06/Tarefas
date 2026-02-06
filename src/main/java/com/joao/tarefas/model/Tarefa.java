@@ -32,7 +32,7 @@ public class Tarefa {
     @Column(nullable = false, unique = true)
     private Integer ordem;
 
-    // ===== GETTERS E SETTERS =====
+
 
     public Long getId() {
         return id;
