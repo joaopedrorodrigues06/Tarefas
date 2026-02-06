@@ -13,4 +13,6 @@ public interface TarefaRepository extends JpaRepository<Tarefa, Long> {
     Optional<Tarefa> findByNome(String nome);
 
     List<Tarefa> findAllByOrderByOrdemAsc();
+
+    Optional<Tarefa> findByOrdem(Integer ordem);
 }

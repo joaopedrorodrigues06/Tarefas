@@ -9,9 +9,7 @@ let tarefasCache = [];
 form.addEventListener('submit', salvar);
 carregar();
 
-/* =======================
-   LISTAR
-======================= */
+
 function carregar() {
     fetch(API)
         .then(res => {
@@ -29,11 +27,16 @@ function carregar() {
             lista.innerHTML = '';
             let total = 0;
 
-            dados.forEach(tarefa => {
+            // Adicionamos o "index" para saber a posição da tarefa na lista
+            dados.forEach((tarefa, index) => {
                 total += Number(tarefa.custo);
 
                 const tr = document.createElement('tr');
                 if (tarefa.custo >= 1000) tr.classList.add('alto-custo');
+
+                // Lógica para identificar a primeira e a última tarefa
+                const isPrimeira = index === 0;
+                const isUltima = index === dados.length - 1;
 
                 tr.innerHTML = `
                     <td>${tarefa.nome}</td>
@@ -42,8 +45,12 @@ function carregar() {
                     <td>
                         <button onclick="editar(${tarefa.id})">Editar</button>
                         <button onclick="excluirTarefa(${tarefa.id})">Excluir</button>
-                        <button onclick="subir(${tarefa.id})">⬆</button>
-                        <button onclick="descer(${tarefa.id})">⬇</button>
+
+                        <button onclick="subir(${tarefa.id})"
+                                style="display: ${isPrimeira ? 'none' : 'inline-block'}">⬆</button>
+
+                        <button onclick="descer(${tarefa.id})"
+                                style="display: ${isUltima ? 'none' : 'inline-block'}">⬇</button>
                     </td>
                 `;
 
@@ -55,9 +62,6 @@ function carregar() {
         .catch(err => console.error(err.message));
 }
 
-/* =======================
-   SALVAR (POST / PUT)
-======================= */
 function salvar(e) {
     e.preventDefault();
 
@@ -89,9 +93,7 @@ function salvar(e) {
         .catch(err => alert(err.message));
 }
 
-/* =======================
-   EDITAR
-======================= */
+
 function editar(id) {
     const tarefa = tarefasCache.find(t => t.id === id);
     if (!tarefa) return;
@@ -102,9 +104,7 @@ function editar(id) {
     document.getElementById('dataLimite').value = tarefa.dataLimite;
 }
 
-/* =======================
-   EXCLUIR
-======================= */
+
 function excluirTarefa(id) {
     if (!confirm('Deseja excluir a tarefa?')) return;
 
@@ -116,9 +116,7 @@ function excluirTarefa(id) {
         .catch(err => alert(err.message));
 }
 
-/* =======================
-   ORDENAR
-======================= */
+
 function subir(id) {
     fetch(`${API}/${id}/subir`, { method: 'PUT' })
         .then(() => carregar());
@@ -129,9 +127,7 @@ function descer(id) {
         .then(() => carregar());
 }
 
-/* =======================
-   UTIL
-======================= */
+
 function formatarData(data) {
     return new Date(data).toLocaleDateString('pt-BR');
 }

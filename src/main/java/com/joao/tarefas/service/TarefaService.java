@@ -3,6 +3,7 @@ package com.joao.tarefas.service;
 import com.joao.tarefas.model.Tarefa;
 import com.joao.tarefas.repository.TarefaRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -15,24 +16,24 @@ public class TarefaService {
         this.repository = repository;
     }
 
+
     public List<Tarefa> listar() {
         return repository.findAllByOrderByOrdemAsc();
     }
 
+
     public Tarefa criar(Tarefa tarefa) {
 
-        Integer ultimaOrdem = repository.findAllByOrderByOrdemAsc()
-                .stream()
-                .map(Tarefa::getOrdem)
-                .max(Integer::compareTo)
-                .orElse(0);
+        int novaOrdem = repository.findAllByOrderByOrdemAsc().size() + 1;
 
-        tarefa.setOrdem(ultimaOrdem + 1);
+        tarefa.setOrdem(novaOrdem);
 
         return repository.save(tarefa);
     }
 
+
     public Tarefa atualizar(Long id, Tarefa nova) {
+
         Tarefa atual = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Tarefa não encontrada"));
 
@@ -43,40 +44,78 @@ public class TarefaService {
         return repository.save(atual);
     }
 
+
+    @Transactional
     public void excluir(Long id) {
-        repository.deleteById(id);
-    }
+        Tarefa removida = repository.findById(id)
+                .orElseThrow();
 
-    public void subir(Long id) {
-        mover(id, -1);
-    }
+        int ordem = removida.getOrdem();
 
-    public void descer(Long id) {
-        mover(id, 1);
-    }
+        repository.delete(removida);
 
-    private void mover(Long id, int direcao) {
         List<Tarefa> tarefas = repository.findAllByOrderByOrdemAsc();
 
-        int index = -1;
-        for (int i = 0; i < tarefas.size(); i++) {
-            if (tarefas.get(i).getId().equals(id)) {
-                index = i;
-                break;
+        for (Tarefa t : tarefas) {
+            if (t.getOrdem() > ordem) {
+                t.setOrdem(t.getOrdem() - 1);
+                repository.save(t);
             }
         }
-
-        int novoIndex = index + direcao;
-        if (index < 0 || novoIndex < 0 || novoIndex >= tarefas.size()) return;
-
-        Tarefa atual = tarefas.get(index);
-        Tarefa outra = tarefas.get(novoIndex);
-
-        int temp = atual.getOrdem();
-        atual.setOrdem(outra.getOrdem());
-        outra.setOrdem(temp);
-
-        repository.save(atual);
-        repository.save(outra);
     }
+
+
+    @Transactional
+    public void subir(Long id) {
+
+        Tarefa atual = repository.findById(id)
+                .orElseThrow();
+
+        if (atual.getOrdem() == null || atual.getOrdem() <= 1) return;
+
+        Tarefa anterior = repository
+                .findByOrdem(atual.getOrdem() - 1)
+                .orElse(null);
+
+        if (anterior == null) return;
+
+        trocarOrdem(atual, anterior);
+    }
+
+
+    @Transactional
+    public void descer(Long id) {
+
+        Tarefa atual = repository.findById(id)
+                .orElseThrow();
+
+        if (atual.getOrdem() == null) return;
+
+        Tarefa proxima = repository
+                .findByOrdem(atual.getOrdem() + 1)
+                .orElse(null);
+
+        if (proxima == null) return;
+
+        trocarOrdem(atual, proxima);
+    }
+
+
+    @Transactional
+    private void trocarOrdem(Tarefa a, Tarefa b) {
+
+        int ordemA = a.getOrdem();
+        int ordemB = b.getOrdem();
+
+        a.setOrdem(-1000);
+        repository.saveAndFlush(a);
+
+        b.setOrdem(ordemA);
+        repository.saveAndFlush(b);
+
+
+        a.setOrdem(ordemB);
+        repository.saveAndFlush(a);
+    }
+
 }

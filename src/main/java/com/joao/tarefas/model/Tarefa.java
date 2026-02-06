@@ -11,8 +11,7 @@ import java.time.LocalDate;
 @Data
 @Entity
 @Table(name = "tarefas", uniqueConstraints = {
-        @UniqueConstraint(columnNames = "nome"),
-        @UniqueConstraint(columnNames = "ordem")
+        @UniqueConstraint(columnNames = "nome")
 })
 public class Tarefa {
 
@@ -34,9 +33,7 @@ public class Tarefa {
     private LocalDate dataLimite;
 
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private Integer ordem;
-
-
 
 }
